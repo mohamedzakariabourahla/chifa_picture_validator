@@ -28,16 +28,16 @@ def process_image_validation(image_np):
             raise Exception("Multiple faces detected in the image")
 
     # --- Person Segmentation & Background Check ---
-    is_background_white, mask_percentage, segmented_image = process_face_segmentation(image_np)
+    is_background_white, mask_percentage, segmented_image, head_margin = process_face_segmentation(image_np)
 
-    # Enforce mask coverage between 60% and 85% (approx. 70%-80%)
+    # Enforce mask coverage between 50% and 85% (approx. 70%-80%)
     if not (0.50 <= mask_percentage <= 0.85):
         raise Exception("Face does not cover between 70% to 80% of the image")
 
     # --- Image Quality Validations ---
     is_clear, blur_message = detect_blurriness(image_np)
     is_good_contrast, contrast_message = detect_contrast(image_np)
-    is_no_shadows, shadow_message = detect_shadows(image_np)
+    # is_no_shadows, shadow_message = detect_shadows(image_np)
 
     # --- Head Orientation and Expression Validation ---
     is_valid, head_message, face_mesh_hex = validate_head_orientation_and_expression(image_np)
@@ -61,7 +61,8 @@ def process_image_validation(image_np):
         "head_validation": head_message,
         "blur_status": blur_message,
         "contrast_status": contrast_message,
-        "shadow_status": shadow_message,
+        #"shadow_status": shadow_message,
+        "head_margin": bool(head_margin),
         "hex_image": hex_image,
         "face_mesh_hex": face_mesh_hex,
     }

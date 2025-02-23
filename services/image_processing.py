@@ -50,16 +50,17 @@ def detect_shadows(image_np):
 
 
 def process_face_segmentation(image_np):
-    """Performs person segmentation and validates background color."""
+    """Performs person segmentation, validates background color, and checks head margin at the top."""
+    height, width, _ = image_np.shape
+
+    # Perform segmentation
     with mp_selfie_segmentation.SelfieSegmentation(model_selection=1) as selfie_segmentation:
         results = selfie_segmentation.process(cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR))
-        logger.debug("Segmentation results obtained.")
         mask = results.segmentation_mask
         condition = mask > 0.5
         mask_area = np.sum(condition)
         total_area = mask.shape[0] * mask.shape[1]
         mask_percentage = mask_area / total_area
-        logger.debug("Mask percentage: %.2f", mask_percentage)
 
         # Segment the person from the background
         bg_removed = np.zeros_like(image_np)
@@ -69,9 +70,15 @@ def process_face_segmentation(image_np):
         bg_mask = ~condition
         background_pixels = image_np[bg_mask]
         total_bg_pixels = background_pixels.shape[0]
-        valid_white_pixels = np.sum((background_pixels >= 245) & (background_pixels <= 255))
+        valid_white_pixels = np.sum((background_pixels >= 247) & (background_pixels <= 255))
         threshold = 0.9
         is_background_white = (valid_white_pixels / total_bg_pixels) >= threshold if total_bg_pixels > 0 else False
-        logger.debug("Background validation: %s", is_background_white)
 
-    return is_background_white, mask_percentage, segmented_image
+    # Ensure space above the head
+    y_indices, _ = np.where(condition)
+    head_has_top_margin = False
+    if y_indices.size > 0:
+        min_y = np.min(y_indices)
+        head_has_top_margin = min_y > 1
+
+    return is_background_white, mask_percentage, segmented_image, head_has_top_margin
