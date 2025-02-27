@@ -14,27 +14,24 @@ def detect_blurriness(image_np):
     logger.debug(f"Laplacian Variance (Blurriness Score): {laplacian_var}")
     threshold = 100
     if laplacian_var < threshold:
-        return False, "Image is blurry"
-    return True, "Image is clear"
+        return False, "image_is_blurry"
+    return True, "image_is_clear"
 
 
-def detect_contrast(image_np):
-    """Analyze contrast using the 5th-95th percentile spread."""
+def detect_overexposure(image_np, brightness_threshold=245, overexposed_ratio=0.6):
+    """Detects overexposure by checking how many pixels are near maximum brightness."""
     gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
-    hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).flatten()
+
+    # Count pixels that are nearly white
+    bright_pixels = np.sum(gray > brightness_threshold)
     total_pixels = gray.size
-    cum_hist = np.cumsum(hist)
-    lower_idx = np.searchsorted(cum_hist, 0.05 * total_pixels)
-    upper_idx = np.searchsorted(cum_hist, 0.95 * total_pixels)
-    contrast_ratio = (upper_idx - lower_idx) / 255.0
-    logger.debug(f"Contrast Ratio (5th-95th percentiles): {contrast_ratio:.4f}")
-    lower_threshold = 0.15
-    upper_threshold = 0.85
-    if contrast_ratio < lower_threshold:
-        return False, "Low contrast detected"
-    elif contrast_ratio > upper_threshold:
-        return False, "High contrast detected"
-    return True, "Contrast is acceptable"
+
+    bright_ratio = bright_pixels / total_pixels
+
+    if bright_ratio > overexposed_ratio:
+        return False, "overexposed_detected"
+
+    return True, "exposure_is_acceptable"
 
 
 def detect_shadows(image_np):
@@ -70,9 +67,10 @@ def process_face_segmentation(image_np):
         bg_mask = ~condition
         background_pixels = image_np[bg_mask]
         total_bg_pixels = background_pixels.shape[0]
-        valid_white_pixels = np.sum((background_pixels >= 247) & (background_pixels <= 255))
+        valid_white_pixels = np.sum((background_pixels >= 245) & (background_pixels <= 255))
         threshold = 0.9
         is_background_white = (valid_white_pixels / total_bg_pixels) >= threshold if total_bg_pixels > 0 else False
+
 
     # Ensure space above the head
     y_indices, _ = np.where(condition)
@@ -80,5 +78,6 @@ def process_face_segmentation(image_np):
     if y_indices.size > 0:
         min_y = np.min(y_indices)
         head_has_top_margin = min_y > 1
+
 
     return is_background_white, mask_percentage, segmented_image, head_has_top_margin

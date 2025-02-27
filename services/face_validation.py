@@ -14,7 +14,7 @@ def validate_head_orientation_and_expression(image_np):
             rgb_image = cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)
             results = face_mesh.process(rgb_image)
             if not results.multi_face_landmarks:
-                return False, "No face landmarks detected", None
+                return False, "no_face_landmarks_detected", None
 
             landmarks = results.multi_face_landmarks[0]
             # Calculate head tilt using eye landmarks
@@ -47,12 +47,13 @@ def validate_head_orientation_and_expression(image_np):
             hex_image = binascii.hexlify(buffer).decode('utf-8')
 
             # Validate head tilt and mouth openness
-            if abs(angle) > 0.1:
-                return False, "Head is tilted", hex_image
+            if abs(angle) > 0.2:
+                print(f"{abs(angle)} - {np.degrees(angle)}")
+                return False, "head_is_tilted", hex_image
             if mouth_open_distance > 0.05:
-                return False, "Mouth is open", hex_image
+                return False, "mouth_is_open", hex_image
 
-            return True, "Face is valid", hex_image
+            return True, "face_is_valid", hex_image
     except Exception as e:
         logger.error("Error during head orientation validation: %s", str(e), exc_info=True)
         return False, f"Validation error: {str(e)}", None
