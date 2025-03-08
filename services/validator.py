@@ -57,7 +57,8 @@ def process_image_validation(image_np):
 
     is_valid = False
 
-    if is_valid_0 and head_has_margin and is_background_white and is_valid_2 and is_valid_3 and is_valid_5:
+    if (is_valid_0 and head_has_margin and is_background_white and is_valid_2 and is_valid_3 and is_valid_5
+            and validation_mssg != "multiple_faces_in_image"):
         is_valid = True
 
     result = {

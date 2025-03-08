@@ -67,8 +67,8 @@ def process_face_segmentation(image_np):
         bg_mask = ~condition
         background_pixels = image_np[bg_mask]
         total_bg_pixels = background_pixels.shape[0]
-        valid_white_pixels = np.sum((background_pixels >= 245) & (background_pixels <= 255))
-        threshold = 0.9
+        valid_white_pixels = np.sum((background_pixels >= 230) & (background_pixels <= 255))
+        threshold = 0.8
         is_background_white = (valid_white_pixels / total_bg_pixels) >= threshold if total_bg_pixels > 0 else False
 
 
